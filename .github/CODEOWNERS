@@ -1,0 +1,5 @@
+/guidelines/          @FIXME-org/guideline-owners
+/sources/             @FIXME-org/guideline-owners
+/.github/             @FIXME-org/platform-admins
+/scripts/             @FIXME-org/platform-admins
+/tests/               @FIXME-org/platform-admins

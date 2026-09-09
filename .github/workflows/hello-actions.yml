@@ -1,0 +1,19 @@
+name: "01 Hello Actions"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  say-hello:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: あいさつをログに表示する
+        run: echo 'Hello, GitHub Actions!'
+      - name: 実行場所ときっかけを確認する
+        env:
+          REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          printf 'repository = %s\ntriggered by = %s\nactor = %s\n' "$REPOSITORY" "$EVENT_NAME" "$ACTOR"

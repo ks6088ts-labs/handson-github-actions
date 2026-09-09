@@ -1,0 +1,47 @@
+name: "04 Propose Guideline Update"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: guideline-proposal
+  cancel-in-progress: false
+jobs:
+  detect:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
+      new_hash: ${{ steps.compare.outputs.new_hash }}
+      old_hash: ${{ steps.compare.outputs.old_hash }}
+    steps:
+      - name: 実行開始時点の文書を取得する
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: 取込済みハッシュと比較する
+        id: compare
+        run: bash scripts/compare-source.sh
+  propose:
+    needs: detect
+    if: needs.detect.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: 検知と同じ時点の文書を取得する
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: 更新候補 PR を作成または再利用する
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          NEW_HASH: ${{ needs.detect.outputs.new_hash }}
+          OLD_HASH: ${{ needs.detect.outputs.old_hash }}
+        run: bash scripts/propose-update.sh
