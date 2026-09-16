@@ -7,6 +7,7 @@ permissions:
   copilot-requests: write
 engine:
   id: copilot
+  model: gpt-5
 max-ai-credits: 2
 timeout-minutes: 10
 tools:
