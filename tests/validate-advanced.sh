@@ -13,4 +13,10 @@ gh aw compile guideline-impact-report
 cmp .github/workflows/guideline-impact-report.lock.yml "$sample_root/.github/workflows/guideline-impact-report.lock.yml"
 gh aw compile guideline-impact-report
 cmp .github/workflows/guideline-impact-report.lock.yml "$sample_root/.github/workflows/guideline-impact-report.lock.yml"
-printf '%s\n' 'PASS: standalone compilation, unchanged lock, repeatable compilation'
+grep -Fq 'copilot-requests: none' .github/workflows/guideline-impact-report.md
+grep -Fq 'COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}' .github/workflows/guideline-impact-report.lock.yml
+if grep -Fq 'S2STOKENS: true' .github/workflows/guideline-impact-report.lock.yml; then
+	printf '%s\n' 'FAIL: organization-billing authentication is enabled' >&2
+	exit 1
+fi
+printf '%s\n' 'PASS: standalone compilation, unchanged lock, repeatable compilation, PAT authentication'

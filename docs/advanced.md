@@ -34,7 +34,7 @@ flowchart LR
 | --- | --- |
 | `on.workflow_dispatch` | 勝手に定期実行せず、人が開始する |
 | `permissions.contents: read` | リポジトリ本文を読む |
-| `permissions.copilot-requests: write` | 組織課金で Copilot を呼び出す権限。ファイル編集権限ではない |
+| `permissions.copilot-requests: none` | 組織の centralized billing を使わず、repository secret `COPILOT_GITHUB_TOKEN` で Copilot を呼ぶことを明示する |
 | `tools.bash` | 模擬文書2つを読む `cat` コマンドを許可する |
 | ルートの `max-ai-credits: 2` | agent の AI 利用を制限する |
 | `safe-outputs.threat-detection.max-ai-credits: 2` | 脅威検知側にも別の制限を設ける |
@@ -51,7 +51,7 @@ flowchart LR
 
 ## 完成版を実行する（10分）
 
-講師が利用可否・ラベル・費用設定を確認済みの場合だけ進みます。基礎 Step 3 の模擬更新が `main` に入っていることを確認してください。
+講師が利用可否・ラベル・費用設定を確認済みの場合だけ進みます。基礎 Step 3 の模擬更新が `main` に入っていることを確認してください。このサンプルでは、Copilot 契約が有効な個人アカウントを resource owner とし、Account permissions の Copilot Requests を Read にした fine-grained PAT を、repository secret `COPILOT_GITHUB_TOKEN` に登録します。`copilot-requests: write` を同時に設定すると repository secret は推論に使われません。
 
 1. `Actions` → `Advanced Guideline Impact Report` を選びます。
 2. `Run workflow` を開き、`main` を選びます。内部用の `aw_context` 入力欄が出ても空のままにします。
@@ -112,7 +112,8 @@ gh pr create --base main --title "影響レポートの指示を改善" --body "
 
 - [ ] GitHub.com の組織所有リポジトリで、Issues と Actions が有効。
 - [ ] 組織管理者が Agentic Workflows と Copilot の利用・課金を許可している。
-- [ ] この構成では `copilot-requests: write` と組み込み `GITHUB_TOKEN` を使う。個人 repo 向け PAT 設定と混在させない。
+- [ ] この構成では `copilot-requests: none` と repository secret `COPILOT_GITHUB_TOKEN` を使う。組織の centralized billing を使う `copilot-requests: write` と混在させない。
+- [ ] PAT の resource owner、Copilot Requests: Read、有効期限、token owner の Copilot 契約を確認し、secret 値をログや資料へ出さない。
 - [ ] `guideline` と `impact-analysis` のラベルを事前に作成した。
 - [ ] lock が参照する Action / コンテナーと AI 通信が組織の許可対象になっている。
 - [ ] source / lock を配置し、実 run で入力読み取り・Issue 作成・本文不変・利用量を確認した。

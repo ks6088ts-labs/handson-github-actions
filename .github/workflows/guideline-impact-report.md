@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  copilot-requests: write
+  copilot-requests: none
 engine: copilot
 model: claude-sonnet-5
 max-ai-credits: 2
