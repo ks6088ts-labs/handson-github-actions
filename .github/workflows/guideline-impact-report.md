@@ -7,15 +7,12 @@ permissions:
   copilot-requests: none
 engine: copilot
 model: claude-sonnet-5
-max-ai-credits: 2
 timeout-minutes: 10
 tools:
   bash:
     - "cat sources/aws-updates.md"
     - "cat guidelines/aws-security-guideline.md"
 safe-outputs:
-  threat-detection:
-    max-ai-credits: 2
   report-failure-as-issue: false
   create-issue:
     title-prefix: "[guideline-impact] "

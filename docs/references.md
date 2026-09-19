@@ -2,7 +2,7 @@
 
 [受講者 README に戻る](../README.md)
 
-## 2026-09-09 に確認した公式資料
+## 2026-09-20 に確認した公式資料
 
 | 資料 | 確認した事項 |
 | --- | --- |
@@ -29,7 +29,7 @@
 
 | 対象 | 版・固定値 |
 | --- | --- |
-| gh-aw | `v0.86.2` |
+| gh-aw | `v0.88.7` |
 | actionlint | `v1.7.12` |
 | ShellCheck | `0.9.0` |
 | 基礎の checkout | `v5.0.0` → `08c6903cd8c0fde910a37f88322edcfb5dd907a8` |
@@ -43,7 +43,7 @@
 
 **ローカルで確認済み**: 通常 workflow と任意サンプルの actionlint、shell の静的検査、初期ハッシュ一致、追記検知、見出し検査、不正入力・欠損の失敗、模擬 CLI を用いた PR 作成失敗からの復旧・重複防止・閉じた PR の扱い・main 不変・古い run の拒否。Advanced は独立した一時 Git リポジトリで compile し、再 compile の生成差分がないことを確認しています。
 
-**実環境では未確認**: GitHub-hosted runner での完走、組織の CODEOWNERS / ruleset / 課金ポリシー、実 PR / Issue 作成、AI 出力品質、費用上限で実際に停止する動作、90分の運営リハーサル。GitHub 上の作成・公開・push や AI 利用は実施していません。開催前に [講師チェックリスト](instructor.md) で確認してください。
+**実環境では未確認**: 修正後の GitHub-hosted runner での完走、組織の CODEOWNERS / ruleset / 課金ポリシー、Advanced による Issue 作成、AI 出力品質、90分の運営リハーサル。修正前の Advanced は入力読み取りと最初の推論まで実行し、3.18 AIC に対して 2 AIC の上限で停止することを確認しました。開催前に [講師チェックリスト](instructor.md) で確認してください。
 
 生成 lock のコンパイル成功は、AI の出力や組織環境での成功を保証しません。教材の PowerPoint はこのサンプル作成では編集・本文確認していません。
 

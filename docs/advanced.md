@@ -6,7 +6,7 @@
 
 通常 Actions は「同じハッシュか」を決まった手順で調べます。ここでは GitHub Agentic Workflows が、模擬文書を読んで「どの節に影響しそうか」を日本語の Issue にまとめます。**AI は候補を出すだけで、ファイルを書き換えたり承認したりしません。**
 
-GitHub Agentic Workflows は Public Preview です。記載と生成物は `gh-aw v0.86.2` で検証しています。利用可否・課金・仕様は開催前に [公式チュートリアル](https://docs.github.com/en/actions/tutorials/develop-agentic-workflows-in-github-actions) と組織のポリシーで再確認します。
+GitHub Agentic Workflows は Public Preview です。記載と生成物は `gh-aw v0.88.7` で検証しています。利用可否・課金・仕様は開催前に [公式チュートリアル](https://docs.github.com/en/actions/tutorials/develop-agentic-workflows-in-github-actions) と組織のポリシーで再確認します。
 
 | 名前 | この演習との関係 |
 | --- | --- |
@@ -36,12 +36,12 @@ flowchart LR
 | `permissions.contents: read` | リポジトリ本文を読む |
 | `permissions.copilot-requests: none` | 組織の centralized billing を使わず、repository secret `COPILOT_GITHUB_TOKEN` で Copilot を呼ぶことを明示する |
 | `tools.bash` | 模擬文書2つを読む `cat` コマンドを許可する |
-| ルートの `max-ai-credits: 2` | agent の AI 利用を制限する |
-| `safe-outputs.threat-detection.max-ai-credits: 2` | 脅威検知側にも別の制限を設ける |
+| `max-ai-credits` の省略 | agent に gh-aw の既定上限 1000 AIC を適用する |
+| `safe-outputs.threat-detection.max-ai-credits` の省略 | 脅威検知に別枠の既定上限 400 AIC を適用する |
 | `create-issue.max: 1` | レポートの作成要求を1回につき最大1件にする |
 | `report-failure-as-issue: false` | 失敗通知の別 Issue を作らず、ログで確認する |
 
-`max-ai-credits` は `engine` の内側ではありません。古い教材から貼り付けると compile が失敗します。**agent 側の2 Credits は実行全体の総額上限ではありません。** 脅威検知の AI 利用と Actions 実行費用、再実行を別に考え、組織の予算管理も行います。少ない上限ではレポートが完成する前に停止する可能性があります。参加者判断で引き上げないでください。
+`max-ai-credits` は1回の run に対する hard limit です。`2` に設定した実 run では、最初の推論だけで 3.18 AIC を消費し、次の推論が HTTP 403 で停止しました。このサンプルは固定値を置かず現行の既定上限を使います。agent、脅威検知、Actions 実行費用、再実行を別に考え、実測値と組織の予算に基づいて上限を決めてください。
 
 次に [.github/workflows/guideline-impact-report.lock.yml](../.github/workflows/guideline-impact-report.lock.yml) を開きます。長い生成物なので全文を読む必要はありません。ページ内検索で `agent:`、`detection:`、`safe_outputs:`、`permissions:` を探します。agent には `contents: write` / `issues: write` がなく、書き込みは別 job です。`conclusion` にもレポート処理用の `issues: write` が生成されるため、safe_outputs だけを見て終わりにしないでください。
 
@@ -79,7 +79,7 @@ flowchart LR
 ```bash
 gh --version
 gh auth status
-gh extension install github/gh-aw --pin v0.86.2
+gh extension install github/gh-aw --pin v0.88.7
 gh aw version
 git switch -c practice/impact-prompt
 ```
@@ -117,7 +117,7 @@ gh pr create --base main --title "影響レポートの指示を改善" --body "
 - [ ] `guideline` と `impact-analysis` のラベルを事前に作成した。
 - [ ] lock が参照する Action / コンテナーと AI 通信が組織の許可対象になっている。
 - [ ] source / lock を配置し、実 run で入力読み取り・Issue 作成・本文不変・利用量を確認した。
-- [ ] 2つの `max-ai-credits` 設定と、組織側予算の両方を確認した。上限超過を実測したかどうかは、設定の確認とは分けて記録する。
+- [ ] 生成 lock の agent 1000 AIC / 脅威検知 400 AIC の既定上限と、組織側予算の両方を確認した。
 
 ## 判断を言葉にする（3分）
 

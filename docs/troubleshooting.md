@@ -29,9 +29,10 @@
 | PR 検査が承認待ち | PR の merge box | 差分を確認した write 権限者が Approve workflows to run | 検査が開始される |
 | 入力用 PR が Pending のまま | ruleset の必須 checks | path filter で起動しないチェックを全 PR に必須化していないか講師が確認 | 人のレビュー後にマージできる |
 | 承認後も変更あり | main の取込済みハッシュ | 正常。候補 PR は当日はマージしない | 候補ブランチだけハッシュが新しい |
-| compile が max-ai-credits で失敗 | frontmatter | engine の内側ではなくルートに置く | v0.86.2 で compile 成功 |
+| compile が max-ai-credits で失敗 | frontmatter | engine の内側ではなくルートに置く | v0.88.7 で compile 成功 |
 | Advanced が認証・課金で停止 | agent / activation のログ | 組織管理者がポリシーと予算を確認。当日は見学へ | 許可された講師 run で再確認 |
-| AI 上限で終了した | agent / detection のログ | 個別上限と実際の利用量を確認。無断で引き上げない | 講師が予算の範囲で判断 |
+| 文書読取後に `HTTP 403 Authentication failed` | `gh aw audit RUN_ID` の AIC と source の `max-ai-credits` | 2 AIC 上限に対し最初の推論だけで 3.18 AIC を消費した実例あり。過小な固定上限を削除して `gh aw compile` | lock の既定上限と新しい run の完走を確認 |
+| AI 上限で終了した | `gh aw audit RUN_ID` | AIC 実測値と個別上限を比較。実測前に極端な固定値を置かない | 講師が予算の範囲で再設定 |
 | Advanced の Issue がない | noop / detection / safe_outputs | 入力読取、検証拒否、ラベル設定を確認。脅威検知を外して迂回しない | 原因を解消した講師 run を確認 |
 | lock が一致しない | gh aw version と差分 | 指示変更後に同じ版で再 compile。生成物は手書きしない | source と lock を同じ PR でレビュー |
 
