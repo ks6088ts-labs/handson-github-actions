@@ -5,8 +5,8 @@ on:
 permissions:
   contents: read
   copilot-requests: write
-engine:
-  id: copilot
+engine: copilot
+model: claude-sonnet-5
 max-ai-credits: 2
 timeout-minutes: 10
 tools:
