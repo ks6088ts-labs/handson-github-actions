@@ -24,7 +24,7 @@ cp -R "$sample_root/sources" "$sample_root/guidelines" "$sample_root/scripts" .
 git add .
 git commit -qm initial
 printf '\n' >> sources/aws-updates.md
-cat "$sample_root/fixtures/aws-update-addition.md" >> sources/aws-updates.md
+sed -n '/^## /,$p' "$sample_root/fixtures/aws-update-addition.md" >> sources/aws-updates.md
 git add sources/aws-updates.md
 git commit -qm 'mock source update'
 git push -q origin main

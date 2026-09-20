@@ -1,124 +1,117 @@
 # Advanced: AI に影響候補をまとめてもらう
 
-[受講者 README に戻る](../README.md)
+[基礎編に戻る](../README.md) | [困ったとき](troubleshooting.md#advanced)
 
-## 何が変わるか（7分）
+GitHub Agentic WorkflowsはPublic Previewです。この教材は `gh-aw v0.88.7` で生成・検証しています。講師は開催前に[公式チュートリアル](https://docs.github.com/en/actions/tutorials/develop-agentic-workflows-in-github-actions)と組織ポリシーを再確認します。
 
-通常 Actions は「同じハッシュか」を決まった手順で調べます。ここでは GitHub Agentic Workflows が、模擬文書を読んで「どの節に影響しそうか」を日本語の Issue にまとめます。**AI は候補を出すだけで、ファイルを書き換えたり承認したりしません。**
+## この30分でできるようになること
 
-GitHub Agentic Workflows は Public Preview です。記載と生成物は `gh-aw v0.88.7` で検証しています。利用可否・課金・仕様は開催前に [公式チュートリアル](https://docs.github.com/en/actions/tutorials/develop-agentic-workflows-in-github-actions) と組織のポリシーで再確認します。
+- 通常ActionsとAgentic Workflowを使い分ける基準を説明する。
+- 人が編集するsourceと、自動生成されるlockを区別する。
+- 読み取り中心のagentと、書き込みを行うsafe outputの境界を確認する。
+- AIが作ったIssueを元文書と照合し、人が判断すべき事項を残す。
 
-| 名前 | この演習との関係 |
-| --- | --- |
-| GitHub Agentic Workflows | Markdown の指示を Actions で実行する、本章の対象 |
-| Copilot CLI | このサンプルが選ぶ AI エンジン。参加者が端末で起動する必要はない |
-| Copilot coding agent | Issue などから実装を委任する別の体験。本章では使用しない |
-| IDE agent mode / skills / custom agents | ワークフロー作成の補助・手順の再利用。実行の必須条件ではない |
-| MCP | ツール接続の規約。今回は外部の業務システムを接続しない |
+## 開始前の分岐（2分）
 
-## 構造を読む（10分）
+- [ ] 基礎Step 3の入力用PRが `main` へマージされている。
+- [ ] 講師からAdvancedを実行してよいと案内された。
+- [ ] `Actions` に `Advanced Guideline Impact Report` が表示される。
+
+3項目すべてを確認できた場合は[構造を読む](#sourceからissueまでの構造8分)へ進みます。1項目でも確認できない場合は[見学ルート](#見学ルート10分)へ進みます。
+
+このリポジトリでは組織課金を利用できないため、すべてのAgentic Workflowを個人PATで実行します。講師がfine-grained PATをrepository secret `COPILOT_GITHUB_TOKEN` に登録し、参加者はtokenやsecretを操作しません。
+
+組織所有リポジトリでは、本来は個人資格情報を持ち込まない組織課金が望ましい構成です。ただし、利用可能になるまではPAT構成を維持し、sourceを組織課金へ戻しません。認証の理由と管理方法は[編集とcompile](agentic-authoring.md#このリポジトリの認証方針)で確認できます。
+
+## 通常Actionsとの違い（5分）
+
+| 観点 | 通常Actions | Agentic Workflow |
+| --- | --- | --- |
+| 処理 | YAMLとスクリプトで決めた手順 | Markdownの指示をAI agentが解釈 |
+| この演習の例 | ハッシュが同じか比較 | どの節へ影響しそうか整理 |
+| 出力 | 同じ入力なら同じ判定 | 表現や候補がrunごとに変わり得る |
+| 書き込み | 権限を持つjobが候補PRを作る | safe output jobがIssueを作る |
+| 費用 | Actions実行時間 | Actions実行時間とAI利用量 |
+| 最終判断 | 人がPRをレビュー | 人がIssueの引用と推論を検証 |
+
+ハッシュ比較のように決まった手順で解ける処理は通常Actionsを使います。文脈の解釈が必要な場合だけAgentic Workflowを検討します。
+
+## sourceからIssueまでの構造（8分）
 
 ```mermaid
-flowchart LR
-    A[Markdown の指示] --> B[gh aw compile]
-    B --> C[lock.yml]
-    C --> D[agent が模擬文書を読む]
-    D --> E[脅威検知]
-    E --> F[safe_outputs が Issue 作成]
-    F --> G[人が根拠を確認]
+flowchart TD
+  subgraph Compile[compile 時]
+    S[source md: 人が編集] --> C[gh aw compile]
+    C --> L[lock yml: 自動生成]
+  end
+  subgraph Run[run 時]
+    L --> A[agent job: contents read]
+    A --> D[threat detection]
+    D --> O[safe outputs job: issues write]
+    O --> I[影響候補の Issue]
+    I --> H[人が引用と未確認事項を検証]
+  end
 ```
 
-まず [.github/workflows/guideline-impact-report.md](../.github/workflows/guideline-impact-report.md) を開きます。先頭の `---` で囲まれた部分が frontmatter、残りが AI への指示です。
+図を文章にすると、次の順序です。
+
+1. 人がMarkdownのsourceを編集する。
+2. `gh aw compile` がGitHub Actions用のlockを生成する。
+3. agent jobが模擬文書を読み、影響候補を整理する。
+4. threat detectionが出力を検査する。
+5. 書き込み権限を持つsafe outputs jobがIssueを作る。
+6. 人が元文書とIssueを照合する。
+
+[source](../.github/workflows/guideline-impact-report.md)を開き、先頭の `---` で囲まれたfrontmatterと、その後のAIへの指示を確認します。
 
 | 設定 | この例での意味 |
 | --- | --- |
-| `on.workflow_dispatch` | 勝手に定期実行せず、人が開始する |
-| `permissions.contents: read` | リポジトリ本文を読む |
-| `permissions.copilot-requests: none` | 組織の centralized billing を使わず、repository secret `COPILOT_GITHUB_TOKEN` で Copilot を呼ぶことを明示する |
-| `tools.bash` | 模擬文書2つを読む `cat` コマンドを許可する |
-| `max-ai-credits` の省略 | agent に gh-aw の既定上限 1000 AIC を適用する |
-| `safe-outputs.threat-detection.max-ai-credits` の省略 | 脅威検知に別枠の既定上限 400 AIC を適用する |
-| `create-issue.max: 1` | レポートの作成要求を1回につき最大1件にする |
-| `report-failure-as-issue: false` | 失敗通知の別 Issue を作らず、ログで確認する |
+| `on.workflow_dispatch` | 人が開始した場合だけ実行する |
+| `contents: read` | agentがリポジトリの内容を読む |
+| `copilot-requests: none` | 組織課金を無効にし、repository secretのPATを使う |
+| `COPILOT_GITHUB_TOKEN` | Copilot Requests: Readを持つfine-grained PAT。講師がsecretに登録する |
+| `tools.bash` | bash toolでは指定した2つの `cat` コマンドだけを許可する |
+| `create-issue.max: 1` | 1回のrunで作るIssueを最大1件にする |
+| `report-failure-as-issue: false` | 失敗は別Issueを作らずrunのログで確認する |
 
-`max-ai-credits` は1回の run に対する hard limit です。`2` に設定した実 run では、最初の推論だけで 3.18 AIC を消費し、次の推論が HTTP 403 で停止しました。このサンプルは固定値を置かず現行の既定上限を使います。agent、脅威検知、Actions 実行費用、再実行を別に考え、実測値と組織の予算に基づいて上限を決めてください。
+次に[生成lock](../.github/workflows/guideline-impact-report.lock.yml)を開きます。全文は読みません。ページ内検索で `agent:`、`detection:`、`safe_outputs:`、`permissions:` を探します。agentには `contents: write` と `issues: write` がなく、Issueへの書き込みは別jobにあります。
 
-次に [.github/workflows/guideline-impact-report.lock.yml](../.github/workflows/guideline-impact-report.lock.yml) を開きます。長い生成物なので全文を読む必要はありません。ページ内検索で `agent:`、`detection:`、`safe_outputs:`、`permissions:` を探します。agent には `contents: write` / `issues: write` がなく、書き込みは別 job です。`conclusion` にもレポート処理用の `issues: write` が生成されるため、safe_outputs だけを見て終わりにしないでください。
+`contents: read` はGitHub側のリポジトリ権限です。runnerのファイルシステム全体を読み取り専用にする設定ではありません。指示とbash許可リストは分析範囲を狭めますが、2ファイル以外を読めない隔離を保証しません。
 
-読み取り中心とは **GitHub 側のリポジトリ権限** の話です。生成物には既定の読み取りツールやローカル作業用機能も追加され、OS のファイルシステムが読み取り専用になるわけではありません。2文書だけを分析するのは指示上の範囲であり、2ファイル以外を読めない隔離を保証するものではありません。このサンプルではファイル変更を公開する safe output を許可していません。
-
-これらは事故のリスクを下げる仕組みで、分析の正しさを保証するものではありません。文書内の命令に従わない指示も含めていますが、人による出力確認は省略しません。
+権限分離は事故の可能性を下げますが、分析の正しさは保証しません。最終確認は省略できません。
 
 ## 完成版を実行する（10分）
 
-講師が利用可否・ラベル・費用設定を確認済みの場合だけ進みます。基礎 Step 3 の模擬更新が `main` に入っていることを確認してください。このサンプルでは、Copilot 契約が有効な個人アカウントを resource owner とし、Account permissions の Copilot Requests を Read にした fine-grained PAT を、repository secret `COPILOT_GITHUB_TOKEN` に登録します。`copilot-requests: write` を同時に設定すると repository secret は推論に使われません。
-
 1. `Actions` → `Advanced Guideline Impact Report` を選びます。
-2. `Run workflow` を開き、`main` を選びます。内部用の `aw_context` 入力欄が出ても空のままにします。
-3. 一度だけ実行し、run を開きます。AI の処理時間は一定ではありません。
-4. 終了後、`Issues` で `[guideline-impact]` から始まる Issue を開きます。
-5. 「S3 の設定確認」に関する候補、根拠の引用、証跡の形式・保管期間が未決定である点を、人が元文書と突き合わせます。この例どおりの文言が必ず出るとは限りません。
-6. `Code` でガイドライン本文が変更されていないこと、run の `safe_outputs` job が Issue を作成したことを確認します。
+2. `Run workflow` を開き、`main` を選びます。`aw_context` 入力欄が表示されても空のままにします。
+3. 1回だけ実行してrunを開きます。AIの処理時間は一定ではありません。
+4. 終了後、`Issues` で `[guideline-impact]` から始まるIssueを開きます。
+5. Issueの短い引用を、[更新文書](../sources/aws-updates.md)と突き合わせます。
+6. 証跡の形式と保管期間が未確認であり、人の判断が必要だと書かれているか確認します。
+7. `Code` でガイドライン本文が変更されていないことを確認します。
+8. runへ戻り、`safe_outputs` jobがIssueを作成したことを確認します。
 
-**期待結果**: 影響候補と根拠を記載した Issue が1件できます。作成上限は「実行ごと」なので、再実行すると別の Issue と費用が発生し得ます。生成文の語句や結論は固定ではありません。
+### Advancedの成功の目印
 
-**困ったら**: 認証、AI 利用上限、threat detection、safe outputs のどこで停止したかログを見ます。文書が読めないときは `noop` で終了するよう指示しているため、Issue なしの終了もあり得ます。無制限に再実行せず講師へ連絡します。
+- 影響候補と根拠を記載したIssueが1件できる。
+- 元文書にない情報を事実として断定していない。
+- 不足情報と人が判断する事項が残っている。
+- ガイドライン本文と `main` のファイルは変更されていない。
 
-10分以内に終わらなければ、進行は講師の事前実行結果へ切り替えます。継続不要な自分の run は `Cancel workflow` で停止します。
+作成上限はrunごとです。再実行すると別のIssueと費用が発生し得ます。10分以内に終わらない場合はrunを停止し、見学ルートへ切り替えます。原因を確認せず繰り返し実行しないでください。
 
-## 見学ルート
+## 見学ルート（10分）
 
-組織ポリシーや課金設定で実行できない場合は、講師が事前に実行した run と生成 Issue を画面共有します。参加者は「入力の引用が正しいか」「未確認が明記されているか」「人の承認が残るか」を確認します。
+講師が事前に実行したrunと生成Issueを画面共有します。参加者は実行ルートと同じく、入力の引用、未確認事項、ファイルが変更されていないことを確認します。
 
-実績 URL は [docs/instructor.md](instructor.md) に講師が記入します。実 run が用意できなければ、source と lock の構造確認までとし、Issue 作成を確認済みとは扱いません。
+実runがない場合はsourceとlockの構造確認までを行います。その場合、Issue作成を確認済みとは扱いません。
 
-## 講師・持ち帰り用: 編集と再 compile
+## 完了チェック（5分）
 
-この節だけ CLI を使います。ローカルへ clone した**独立した演習リポジトリのルート**で実行します。基礎編の受講者は実施不要です。
+- [ ] ハッシュ比較を通常Actionsに残す理由を説明できる。
+- [ ] sourceは人が編集し、lockはcompileで生成すると説明できる。
+- [ ] agentとIssue作成jobの権限が分かれている箇所を示せる。
+- [ ] AIの候補を、人が元文書と照合する必要性を説明できる。
+- [ ] 再実行にはActions実行時間とAI利用量がかかると説明できる。
 
-```bash
-gh --version
-gh auth status
-gh extension install github/gh-aw --pin v0.88.7
-gh aw version
-git switch -c practice/impact-prompt
-```
-
-拡張が導入済みなら install は省略し、版を確認します。認証が必要なら `gh auth login --scopes repo,workflow` を使い、認証情報は端末の案内に従って入力します。資料・チャット・ログには貼り付けません。
-
-1. source の「Issue に含めること」に「対応の優先度とその理由」を追加します。
-2. 次のコマンドで compile します。
-
-   ```bash
-   gh aw compile guideline-impact-report
-   git diff -- .github/workflows/guideline-impact-report.md \
-     .github/workflows/guideline-impact-report.lock.yml .github/aw/actions-lock.json
-   ```
-
-3. 指示と生成物の両方をレビューします。権限、Action の SHA、入力、出力制限に意図しない変更がないことを確認します。
-4. source / lock と変更された補助ファイルをコミットし、変更用ブランチを push して PR を作ります。人がレビュー・マージしてから手動実行します。
-
-```bash
-git add .github/workflows/guideline-impact-report.md \
-  .github/workflows/guideline-impact-report.lock.yml .github/aw/actions-lock.json
-git commit -m "docs: refine guideline impact report"
-git push --set-upstream origin practice/impact-prompt
-gh pr create --base main --title "影響レポートの指示を改善" --body "source と生成 lock のレビューをお願いします。"
-```
-
-`gh aw init` はエージェント向けの作成支援ファイルを追加する操作です。この完成サンプルを実行・compile するためには不要です。自分で新しい workflow を作り始めるときだけ公式手順に沿って検討します。
-
-### 講師が事前に確認する項目
-
-- [ ] GitHub.com の組織所有リポジトリで、Issues と Actions が有効。
-- [ ] 組織管理者が Agentic Workflows と Copilot の利用・課金を許可している。
-- [ ] この構成では `copilot-requests: none` と repository secret `COPILOT_GITHUB_TOKEN` を使う。組織の centralized billing を使う `copilot-requests: write` と混在させない。
-- [ ] PAT の resource owner、Copilot Requests: Read、有効期限、token owner の Copilot 契約を確認し、secret 値をログや資料へ出さない。
-- [ ] `guideline` と `impact-analysis` のラベルを事前に作成した。
-- [ ] lock が参照する Action / コンテナーと AI 通信が組織の許可対象になっている。
-- [ ] source / lock を配置し、実 run で入力読み取り・Issue 作成・本文不変・利用量を確認した。
-- [ ] 生成 lock の agent 1000 AIC / 脅威検知 400 AIC の既定上限と、組織側予算の両方を確認した。
-
-## 判断を言葉にする（3分）
-
-ハッシュ比較や定型の通知は通常 Actions、文脈の解釈や影響候補の整理は Agentic Workflows、反映の承認は人です。課金・出力の揺れ・誤分析への対応を含めて採用を判断します。次段階は実 AWS 情報の取得、AI 分析の有用性評価、SharePoint 連携の順に、別途設計してください。
+Advancedはここで完了です。sourceを編集してcompileする手順は[Agentic Workflowを編集する](agentic-authoring.md)へ進みます。仕様と検証範囲は[参照資料](references.md)で確認できます。

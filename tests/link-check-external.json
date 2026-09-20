@@ -1,0 +1,9 @@
+{
+  "ignorePatterns": [
+    { "pattern": "^https?://example\\.invalid" },
+    { "pattern": "^https?://localhost" }
+  ],
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s"
+}

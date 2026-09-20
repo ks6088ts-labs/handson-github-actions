@@ -1,10 +1,12 @@
 ---
+name: "Extra Daily Repository Status"
 on:
-  schedule: daily
+  workflow_dispatch:
 permissions:
   contents: read
   issues: read
   pull-requests: read
+  copilot-requests: none
 engine: copilot
 model: claude-sonnet-5
 safe-outputs:
@@ -14,6 +16,6 @@ safe-outputs:
     close-older-issues: true
 ---
 
-## Daily Repository Status Report
+# Daily Repository Status Report
 
-Create a daily repository status report for the team as a GitHub issue.
+Create a repository status report for the team as a GitHub issue.

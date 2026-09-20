@@ -1,45 +1,71 @@
 # 困ったときの確認表
 
-[受講者 README に戻る](../README.md)
+[受講者READMEに戻る](../README.md) | [Advanced](advanced.md)
 
-最初に **workflow の名前 / run の URL / 最初に赤くなった step / エラー文** を確認します。スクリーンショットやログを共有する際も秘密情報は含めません。token や secret の値を表示して確認する必要はありません。
+最初に次の4点を記録します。
 
-| 状況 | 確認する場所 | 対処 | 再確認 |
-| --- | --- | --- | --- |
-| Actions に一覧がない | repo のルート | サンプルがサブフォルダーに入っていないか講師に確認 | `.github/workflows/` が repo 直下にある |
-| Run workflow がない | 既定ブランチ上の YAML | `workflow_dispatch` と配置を確認 | main の Actions でボタンが出る |
-| 01 のみ実行できる | checkout を使う step | Action の許可、GitHub への通信、contents: read を講師が確認 | checkout が成功する |
-| YAML が Invalid | GitHub が示す行 | タブを使わずスペースで修正。完成版と比較する | PR のチェックが更新される |
-| main へ直接コミットできない | Commit changes の画面 | 正常。新しいブランチを選んで PR を作る | レビュー依頼ができる |
-| 自分の PR を承認できない | PR の作成者 | 講師または別の担当者に依頼 | 他者の承認記録が残る |
-| H1 がない | 検査ログに出たファイル | 先頭に `#` と半角スペースと見出しを戻し、同じ変更ブランチへコミット | 検査が成功する |
-| 02 が起動しない | 変更ファイル一覧 | 更新文書だけなら正常。ガイドライン変更か確認 | 対象 Markdown を変更すると起動 |
-| 02 が複数回動く | run の event | push と PR、マージ後の push は別イベント | 同じ変更による run か見分ける |
-| 初回から変更あり | main の更新文書とハッシュ | 初期コピーか講師に確認。参加者はハッシュを直さない | 未変更のコピーで変更なし |
-| 追記したのに変更なし | main の更新文書 | 入力用 PR のマージと、新しい Run workflow を確認 | 新しい run で変更あり |
-| 03 / 04 の job が skip | 実行ブランチ | main を選ぶ。04 の propose だけ skip なら変更なしで正常 | Summary と実行ブランチを確認 |
-| 取込済みハッシュのエラー | sources の初期ファイル | 隠しファイルも配置したか確認。64桁を手入力しない | 講師が初期コピーで再検証 |
-| Resource not accessible | 04 の失敗 step | job の contents / pull-requests 権限と組織ポリシーを講師が確認 | 再実行で成功 |
-| Actions is not permitted to create... | Actions の General 設定 | PR 作成許可を講師が確認 | 同じ run を再実行し PR が作られる |
-| 既定ブランチが更新された | 04 のログ | 古い Re-run jobs ではなく、新しい Run workflow を使う | 最新 main で検知される |
-| 04 を実行しても PR が増えない | Summary の既存 PR リンク | 正常。同じ更新は同じ PR を使う | 既存 PR を開ける |
-| 閉じた候補をもう一度検討したい | 元の候補 PR | 人が再オープン。自動で却下判断を覆さない | 元の PR でレビューを再開 |
-| CODEOWNERS の要求がない | main の CODEOWNERS | FIXME、可視チーム、write 権限、所有者設定エラーを講師が確認 | 新しい該当 PR で要求が出る |
-| Checks に生成元 run がない | PR 本文 | 「生成元の実行ログ」リンクを開く | 04 の run に戻れる |
-| PR 検査が承認待ち | PR の merge box | 差分を確認した write 権限者が Approve workflows to run | 検査が開始される |
-| 入力用 PR が Pending のまま | ruleset の必須 checks | path filter で起動しないチェックを全 PR に必須化していないか講師が確認 | 人のレビュー後にマージできる |
-| 承認後も変更あり | main の取込済みハッシュ | 正常。候補 PR は当日はマージしない | 候補ブランチだけハッシュが新しい |
-| compile が max-ai-credits で失敗 | frontmatter | engine の内側ではなくルートに置く | v0.88.7 で compile 成功 |
-| Advanced が認証・課金で停止 | agent / activation のログ | 組織管理者がポリシーと予算を確認。当日は見学へ | 許可された講師 run で再確認 |
-| 文書読取後に `HTTP 403 Authentication failed` | `gh aw audit RUN_ID` の AIC と source の `max-ai-credits` | 2 AIC 上限に対し最初の推論だけで 3.18 AIC を消費した実例あり。過小な固定上限を削除して `gh aw compile` | lock の既定上限と新しい run の完走を確認 |
-| AI 上限で終了した | `gh aw audit RUN_ID` | AIC 実測値と個別上限を比較。実測前に極端な固定値を置かない | 講師が予算の範囲で再設定 |
-| Advanced の Issue がない | noop / detection / safe_outputs | 入力読取、検証拒否、ラベル設定を確認。脅威検知を外して迂回しない | 原因を解消した講師 run を確認 |
-| lock が一致しない | gh aw version と差分 | 指示変更後に同じ版で再 compile。生成物は手書きしない | source と lock を同じ PR でレビュー |
+- workflowの名前
+- runのURL
+- 最初に赤くなったstep
+- エラー文
+
+ログやスクリーンショットにtokenやsecretを含めないでください。値を表示して確認する必要はありません。
+
+## 開始前
+
+| 見えている状況 | 最初に見る場所 | 次の操作 |
+| --- | --- | --- |
+| Actionsにworkflowがない | リポジトリのルート | `.github/workflows/` がリポジトリ直下にあるか講師が確認する |
+| `Settings` が見えない | 講師が設定した権限 | 画面の有無で判断せず、講師にwrite権限を確認する |
+| CODEOWNERSに `FIXME` がある | `.github/CODEOWNERS` | 講師が実在するチームへ置換してから配布する |
+| 初回から「変更あり」になる | `main` の更新文書とハッシュ | 参加者は直さず、講師が未変更の初期コピーへ戻す |
+
+## Step 1-2
+
+| 見えている状況 | 最初に見る場所 | 次の操作 |
+| --- | --- | --- |
+| `Run workflow` がない | 既定ブランチのworkflow | `workflow_dispatch` と配置を講師が確認する |
+| checkoutだけ失敗する | 最初に赤いstep | Actionの許可、GitHubへの通信、`contents: read` を講師が確認する |
+| YAMLがInvalidになる | GitHubが示す行 | タブをスペースへ直し、完成版と比較する |
+| `main` へ直接commitできない | `Commit changes` 画面 | 正常。新しいブランチを選んでPRを作る |
+| 自分のPRを承認できない | PRの作成者 | 講師または別のレビュー担当者へ依頼する |
+| H1がないと表示される | 検査ログのファイル名 | 先頭の `#`、半角スペース、見出しを戻して同じブランチへcommitする |
+| `02` が起動しない | 変更したファイル | `guidelines/**/*.md` 以外だけの変更なら正常。対象ファイルを確認する |
+| `02` が複数回動く | 各runのevent | push、pull request、マージ後のpushを区別する |
+
+## Step 3-5
+
+| 見えている状況 | 最初に見る場所 | 次の操作 |
+| --- | --- | --- |
+| 追記後も「変更なし」になる | `main` の更新文書 | 入力用PRのマージ後に、新しい `Run workflow` を実行する |
+| `03` または `04` のjobがskipになる | 実行ブランチとSummary | `main` を選ぶ。`propose` だけのskipは変更なしなら正常 |
+| 取込済みハッシュのエラーになる | `sources/.ingested-hash` | 64桁を手入力せず、講師が隠しファイルを含む初期コピーを復元する |
+| `Resource not accessible` になる | `04` の失敗step | `contents`、`pull-requests`、組織ポリシーを講師が確認する |
+| ActionsによるPR作成が禁止される | ActionsのGeneral設定 | `Allow GitHub Actions to create and approve pull requests` を講師が確認する |
+| 既定ブランチが更新されたと表示される | `04` のログ | 古い `Re-run jobs` ではなく、新しい `Run workflow` を実行する |
+| 再実行してもPRが増えない | Summary | 正常。既存PRのリンクを開く |
+| 閉じた候補を再検討したい | 元の候補PR | 人が再openする。workflowは却下済み候補を自動再作成しない |
+| Reviewersが空になる | `main` のCODEOWNERS | チーム名、可視性、write権限、設定エラーを講師が確認する |
+| 候補PRの検査が承認待ちになる | PRのmerge box | write権限者が差分を確認して `Approve workflows to run` を選ぶ |
+| 入力用PRがPendingのままになる | rulesetの必須check | path filter付き検査を全PRの必須checkにしていないか確認する |
+| 承認後も「変更あり」になる | `main` の取込済みハッシュ | 正常。候補PRは当日マージしないため、基準値は古いまま |
+
+## Advanced
+
+| 見えている状況 | 最初に見る場所 | 次の操作 |
+| --- | --- | --- |
+| `COPILOT_GITHUB_TOKEN` がないと表示される | 対象リポジトリのActions secrets | secret名と登録先を確認する。sourceは `copilot-requests: none` のままにする |
+| `HTTP 403 Authentication failed` になる | agentのログとPAT設定 | PAT所有者のCopilot契約、Copilot Requests: Read、有効期限を確認する |
+| sourceが `copilot-requests: write` になっている | sourceと生成lock | 現環境では組織課金を使わない。`none` へ戻してcompileする |
+| AI利用上限で終了する | `gh aw audit RUN_ID` | 実測AICと組織予算を比較し、講師が上限を決める |
+| Issueが作られない | `noop`、`detection`、`safe_outputs` | 入力読取、脅威検知、ラベルを確認する。検査を外して迂回しない |
+| 10分以内に終わらない | runの進行状況 | runを停止し、講師の事前runを使う見学ルートへ切り替える |
+| lockがsourceと一致しない | `gh aw version` と差分 | `v0.88.7` で再compileし、生成物を手で直さない |
 
 ## 再実行の使い分け
 
-**入力を変えた場合は `Run workflow`。** 新しい main の文書を取得します。
+入力を変えた場合は `Run workflow` を使います。新しい `main` の文書を取得します。
 
-**通信や設定エラーから復旧する場合は `Re-run jobs`。** 同じ入力を再処理します。ただし、その間に main が進んだ場合は04が停止するので、新しく実行してください。長期間経過した古い run の再利用は避けます。
+通信や設定エラーから復旧する場合は `Re-run jobs` を使います。同じ入力を再処理します。その間に `main` が進んだ場合、Step 4は安全のため停止します。新しい `Run workflow` を実行してください。
 
 エラーを消すために `permissions: write-all` を付けたり、保護ルールを解除したり、secret をログへ出したりしないでください。

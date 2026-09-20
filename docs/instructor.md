@@ -1,8 +1,8 @@
 # 講師向け: 準備・運営・検証
 
-[受講者 README に戻る](../README.md)
+[受講者READMEに戻る](../README.md) | [Advanced](advanced.md) | [Agentic Workflowの編集](agentic-authoring.md)
 
-## 1. 開催前に決めること
+## 1. 配布を止める必須項目
 
 | 項目 | 設定値 |
 | --- | --- |
@@ -12,10 +12,10 @@
 | guideline-owners に相当するチーム | FIXME: 実在する可視チーム、対象 repo に write 以上 |
 | platform-admins に相当するチーム | FIXME: 実在する可視チーム、対象 repo に write 以上 |
 | レビュー担当者と参加者の対応表 | FIXME: 作成者以外の承認者を割り当てる |
-| Advanced 実施可否・利用予算 | FIXME: 組織管理者に確認 |
+| Advanced のPAT所有者・有効期限・利用予算 | FIXME: 組織管理者に確認 |
 | 見学用の実 run URL・Issue URL | FIXME: 講師の事前実行後に記入 |
 
-未設定のチーム名でレビュー要求は動きません。参加者をチームに入れても、**自分が作った PR の承認者にはできません**。講師補助または相互レビュー担当を用意します。
+`FIXME` が1つでも残っているリポジトリは参加者へ配布しません。未設定のチーム名でレビュー要求は動きません。参加者をチームに入れても、自分が作ったPRの承認者にはできません。講師補助または相互レビュー担当を用意します。
 
 ## 2. 配布用リポジトリを準備する
 
@@ -26,7 +26,7 @@
 5. この構成をテンプレートとして参加者別リポジトリへ配布します。テンプレートのコピーだけでは ruleset・権限・設定が揃うとは限りません。**各リポジトリで**設定を確認します。
 6. 参加者へ URL、レビュー担当者、README の場所を伝えます。基礎編の参加者には Git・GitHub CLI のインストールを要求しません。
 
-初期状態では `.github/workflows/` に基礎4本と Advanced の source / lock があり、すべて手動実行から開始できます。`02 Check Guidelines` だけは対象ファイルの push / PR でも動きます。定期実行は `examples/` にあり、有効ではありません。
+初期状態では `.github/workflows/` に基礎4本とAdvancedのsource、lockがあります。すべて手動実行から開始できます。`02 Check Guidelines` だけは対象ファイルのpushとpull requestでも動きます。定期実行と追加のAgentic Workflowは `examples/` にあり、有効ではありません。
 
 ## 3. GitHub の設定
 
@@ -40,28 +40,38 @@
 - [ ] **この演習では path filter のある見出し検査を、すべての PR の必須 status check にしない。** 更新文書だけの PR では検査が起動せず、必須にすると Pending のまま詰まる。レビュー必須は維持し、動いた検査は人が確認する。
 - [ ] PR 作成用 `proposal/` ブランチは作成可能である。全ブランチへの作成制限・署名必須などがある場合は講師が事前に対応方針を確認する。
 
-`GITHUB_TOKEN` で作成した PR の `pull_request` 検査には、`Approve workflows to run` の承認が必要になる場合があります。write 権限のある担当者が差分を確認して実行を許可します。PAT を追加して迂回することは、この教材では行いません。仕様は [公式のイベント制限](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow) を確認してください。
+### AdvancedのPAT認証を準備する
+
+組織所有リポジトリでは、本来は個人資格情報を使わない組織課金が望ましい構成です。しかし、現状は組織課金を利用できないため、この教材の全Agentic WorkflowをPATで実行します。sourceの `copilot-requests: none` を維持し、組織課金へ戻しません。
+
+Copilot契約が有効な個人アカウントで、Copilot Requests: Readを持つfine-grained PATを作成します。[PATの手順](agentic-authoring.md#個人patを使う現在の構成)に従い、各参加者リポジトリへrepository secret `COPILOT_GITHUB_TOKEN` を登録します。templateからsecretは複製されないため、リポジトリごとに確認します。
+
+- [ ] PATのresource owner、Copilot契約、Copilot Requests: Read、有効期限を記録した。
+- [ ] 各参加者リポジトリに `COPILOT_GITHUB_TOKEN` を登録した。値はログや資料へ出していない。
+- [ ] `guideline` と `impact-analysis` のラベルを作成した。
+- [ ] lockが参照するAction、コンテナー、AI通信を組織が許可している。
+- [ ] agent 1000 AIC、脅威検知400 AICの既定上限、PAT所有者の費用負担を確認した。
+
+通常workflowが `GITHUB_TOKEN` で作成したPRの `pull_request` 検査には、`Approve workflows to run` の承認が必要になる場合があります。write権限のある担当者が差分を確認して実行を許可します。`COPILOT_GITHUB_TOKEN` はAI推論専用であり、PR作成や検査承認へ渡しません。仕様は[公式のイベント制限](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow)を確認してください。
 
 ## 4. 配布前のローカル検証
 
-講師の Linux / WSL / Bash 環境で、**まだ演習の追記をしていないサンプル**を検証します。Git、Bash、GNU coreutils、GitHub CLI、actionlint、ShellCheck を使用します。参加者の環境には不要です。
+講師のLinux、WSL、またはGNU coreutilsを導入したmacOSで、まだ演習の追記をしていないサンプルを検証します。Git、Bash 3.2以上、GNU coreutils、GitHub CLI、actionlint、ShellCheckを使用します。参加者の環境には不要です。
 
 サンプルのルートで実行します。
 
 ```bash
 bash tests/test-samples.sh
 bash tests/test-proposal.sh
+bash tests/validate-workflows.sh
 shellcheck scripts/*.sh tests/*.sh
-actionlint .github/workflows/hello-actions.yml \
-  .github/workflows/check-guidelines.yml \
-  .github/workflows/detect-source-change.yml \
-  .github/workflows/propose-guideline-update.yml examples/*.yml
 bash tests/validate-advanced.sh
+bash tests/validate-docs.sh
 ```
 
 最初のテストは初期ハッシュ一致を確認します。追記後の演習リポジトリで失敗するのは想定どおりです。PR のテストは一時ディレクトリ内の bare Git リポジトリと模擬 `gh` を使い、GitHub に通信・書き込みしません。
 
-Advanced の検証だけは、Action やコンテナー参照の解決にネットワークが必要です。**AI は実行せず、課金 API の呼び出し・Issue 作成・push は行いません。** 検証スクリプトは一時 Git ルートで compile し、配布 lock と一致することを確認します。`gh-aw v0.88.7` を使用します。異なる版で lock が変わった場合は、無理に成功扱いせず差分をレビューしてください。
+Advancedの検証だけは、Actionやコンテナー参照の解決にネットワークが必要です。AIは実行せず、課金APIの呼び出し、Issue作成、pushは行いません。検証スクリプトは一時Gitルートでmainと任意サンプルをPAT構成のままcompileします。`gh-aw v0.88.7` 以外でlockが変わった場合は成功扱いせず、公式仕様と差分をレビューしてください。
 
 ## 5. GitHub 上での事前リハーサル
 
@@ -78,7 +88,8 @@ Advanced の検証だけは、Action やコンテナー参照の解決にネッ�
 - [ ] PR 本文から検知時点の文書と生成元 run を開ける。
 - [ ] 検査の実行承認が表示される場合の操作を確認した。
 - [ ] 承認後も自動マージされず、main のハッシュが古いままである。
-- [ ] Advanced の前提を [docs/advanced.md](advanced.md) で確認し、実 run と Issue を準備した。
+- [ ] PAT構成でAdvancedを実行し、実run、Issue、AI利用量を確認した。
+- [ ] runのログやIssueにPAT値が出ていないことを確認した。
 - [ ] 入力用 PR のレビュー待ちを含め、基礎の操作40分に収まる。レビュー担当者が常時対応できる。
 
 不合格の項目があれば、参加者へ配布する前に解消します。受講者用リポジトリにはリハーサルの追記・候補 PR を残さず、初期コピーを配布してください。
