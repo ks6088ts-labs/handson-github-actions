@@ -16,8 +16,9 @@ gh aw compile guideline-impact-report
 cmp .github/workflows/guideline-impact-report.lock.yml "$sample_root/.github/workflows/guideline-impact-report.lock.yml"
 cmp .github/aw/actions-lock.json "$sample_root/.github/aw/actions-lock.json"
 grep -Fq 'copilot-requests: none' .github/workflows/guideline-impact-report.md
-grep -Fq '総合所見で「影響候補なし」と明記してください。' .github/workflows/guideline-impact-report.md
-grep -Fq '「影響候補なし」を含め' .github/workflows/guideline-impact-report.md
+prompt=$(tr '\n' ' ' < .github/workflows/guideline-impact-report.md)
+grep -Fq '総合所見で「影響候補なし」' <<< "$prompt"
+grep -Fq 'タイトルにも 「影響候補なし」を含め' <<< "$prompt"
 grep -Eq '^      copilot-requests: none$' .github/workflows/guideline-impact-report.lock.yml
 grep -Fq "COPILOT_GITHUB_TOKEN: \${{ secrets.COPILOT_GITHUB_TOKEN }}" .github/workflows/guideline-impact-report.lock.yml
 grep -Fq 'issues: write' .github/workflows/guideline-impact-report.lock.yml
